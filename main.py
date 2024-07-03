@@ -1,12 +1,43 @@
-# Importing Libraries
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import os
 import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from mpl_toolkits.mplot3d import Axes3D
+import requests
+import io
 
+# URLs to the CSV files on GitHub
+training_url = 'https://raw.githubusercontent.com/your-username/your-repo/main/Disease_Prediction_Training.csv'
+testing_url = 'https://raw.githubusercontent.com/your-username/your-repo/main/Disease_Prediction_Testing.csv'
+
+# Download the CSV files
+@st.cache_data
+def load_data(url):
+    response = requests.get(url)
+    response.raise_for_status()  # Ensure we notice bad responses
+    return pd.read_csv(io.StringIO(response.text))
+
+# Load training and testing data
+training_df = load_data(training_url)
+testing_df = load_data(testing_url)
+
+# Display the DataFrames
+st.write("Training Data")
+st.write(training_df)
+st.write("Testing Data")
+st.write(testing_df)
+
+# Assuming you have some data processing and visualization code here
+scaler = StandardScaler()
+scaled_training_data = scaler.fit_transform(training_df.select_dtypes(include=[np.number]))
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(scaled_training_data[:, 0], scaled_training_data[:, 1], scaled_training_data[:, 2])
+st.pyplot(fig)
+
+# Your existing machine learning code, updated to use the loaded DataFrames
 # List of symptoms
 l1 = ['back_pain','constipation','abdominal_pain','diarrhoea','mild_fever','yellow_urine',
       'yellowing_of_eyes','acute_liver_failure','fluid_overload','swelling_of_stomach',
@@ -43,53 +74,32 @@ disease = ['Fungal infection', 'Allergy', 'GERD', 'Chronic cholestasis',
            '(vertigo) Paroymsal  Positional Vertigo', 'Acne',
            'Urinary tract infection', 'Psoriasis', 'Impetigo']
 
-# Reading the training data
-df = pd.read_csv("E:\python\Disease_Prediction_Training.csv")
-df.replace({'prognosis': {disease[i]: i for i in range(len(disease))}}, inplace=True)
+# Prepare the data
+training_df.replace({'prognosis': {disease[i]: i for i in range(len(disease))}}, inplace=True)
+testing_df.replace({'prognosis': {disease[i]: i for i in range(len(disease))}}, inplace=True)
 
-# Reading the testing data
-tr = pd.read_csv("E:\python\Disease_Prediction_Testing.csv")
-tr.replace({'prognosis': {disease[i]: i for i in range(len(disease))}}, inplace=True)
+X_train = training_df[l1]
+y_train = training_df["prognosis"]
+X_test = testing_df[l1]
+y_test = testing_df["prognosis"]
 
-# Defining feature and target variables
-X = df[l1]
-y = df["prognosis"]
-
-X_test = tr[l1]
-y_test = tr["prognosis"]
-
-# Random Forest Classifier
+# Random Forest Classifier  
 from sklearn.ensemble import RandomForestClassifier
-clf_rf = RandomForestClassifier(n_estimators=100)
-clf_rf.fit(X, y)
+clf = RandomForestClassifier(n_estimators=100)
+clf.fit(X_train, y_train)
 
-# Decision Tree Classifier
-from sklearn.tree import DecisionTreeClassifier
-clf_dt = DecisionTreeClassifier()
-clf_dt.fit(X, y)
-
-# Accuracy of the classifiers
+# Accuracy of the classifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-y_pred_rf = clf_rf.predict(X_test)
-accuracy_rf = accuracy_score(y_test, y_pred_rf)
-
-y_pred_dt = clf_dt.predict(X_test)
-accuracy_dt = accuracy_score(y_test, y_pred_dt)
-
-print("Random Forest Classifier")
-print("Accuracy:", accuracy_rf)
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_rf))
-
-print("Decision Tree Classifier")
-print("Accuracy:", accuracy_dt)
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_dt))
+y_pred = clf.predict(X_test)
+st.write("Random Forest Classifier")
+st.write("Accuracy:", accuracy_score(y_test, y_pred))
+st.write("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
 # Streamlit user interface
 def get_symptoms_and_predict():
     st.title("Disease Prediction System")
     st.write("Please select your symptoms")
 
-    algorithm = st.selectbox("Select Algorithm", ["Random Forest", "Decision Tree"])
     psymptoms = st.multiselect("Symptoms", l1)
 
     l2 = [0] * len(l1)
@@ -99,23 +109,14 @@ def get_symptoms_and_predict():
 
     inputtest = [l2]
     if st.button("Predict"):
-        if algorithm == "Random Forest":
-            predict = clf_rf.predict(inputtest)
-            predicted = predict[0]
-            accuracy = accuracy_rf
-        else:
-            predict = clf_dt.predict(inputtest)
-            predicted = predict[0]
-            accuracy = accuracy_dt
+        predict = clf.predict(inputtest)
+        predicted = predict[0]
 
         if predicted in range(len(disease)):
             st.success(f"The predicted disease is: {disease[predicted]}")
         else:
             st.error("Disease not found")
 
-        st.markdown(f"<h3 style='text-align: center; color: white ;'>Model Accuracy: {accuracy:.2f}</h3>", unsafe_allow_html=True)
-
 # Main program execution
 if __name__ == "__main__":
     get_symptoms_and_predict()
-
