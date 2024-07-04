@@ -8,8 +8,8 @@ import requests
 import io
 
 # URLs to the CSV files on GitHub
-training_url = 'https://raw.githubusercontent.com/your-username/your-repo/main/Disease_Prediction_Training.csv'
-testing_url = 'https://raw.githubusercontent.com/your-username/your-repo/main/Disease_Prediction_Testing.csv'
+training_url = 'https://raw.githubusercontent.com/suyashsurve2001/Disease-Prediction-System/main/Disease_Prediction_Training.csv'
+testing_url = 'https://raw.githubusercontent.com/suyashsurve2001/Disease-Prediction-System/main/Disease_Prediction_Testing.csv'
 
 # Download the CSV files
 @st.cache_data
