@@ -1,0 +1,3 @@
+# Disease Prediction System
+
+The Disease Prediction System is a machine learning–based healthcare application developed using Python, Streamlit, Pandas, and Scikit-learn that predicts diseases based on user-selected symptoms. The project compares the performance of Decision Tree and Random Forest algorithms to provide accurate disease predictions along with model accuracy. The system currently supports 133 symptoms and offers a user-friendly interface for quick and efficient preliminary healthcare analysis. [Live Demo](https://disease-prediction-system-suyash.streamlit.app/?utm_source=chatgpt.com)
